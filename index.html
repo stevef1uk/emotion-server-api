@@ -154,10 +154,10 @@ docker pull stevef1uk/emotion-service:arm64
 docker pull stevef1uk/emotion-service:amd64
 
 # Run the container
-docker run -d -p 8080:8080 stevef1uk/emotion-service:arm64</code></pre>
+docker run -d -p 8000:8000 stevef1uk/emotion-service:arm64</code></pre>
 
       <p>Send a POST request:</p>
-      <pre><code>curl -X POST http://localhost:8080/predict \
+      <pre><code>curl -X POST http://localhost:8000/predict \
      -H "Content-Type: application/json" \
      -d '{"text": "I’m so happy to see you!"}'
 
