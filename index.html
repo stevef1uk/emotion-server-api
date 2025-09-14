@@ -282,7 +282,29 @@
         link.addEventListener('click', function(e) {
           e.preventDefault();
           const targetId = this.getAttribute('href').substring(1);
-          showTab(targetId);
+          
+          // If it's a main content section, just scroll to it
+          if (['features', 'emotions', 'usage', 'benchmarks', 'business-case', 'pricing', 'faq', 'contact'].includes(targetId)) {
+            // Hide Try It Live page if it's showing
+            const tryCard = document.getElementById('try-it');
+            if (tryCard) {
+              tryCard.style.display = 'none';
+            }
+            
+            // Show all main content
+            const mainCards = document.querySelectorAll('.card:not(#try-it)');
+            mainCards.forEach(card => {
+              card.style.display = 'block';
+            });
+            
+            // Scroll to the target section
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+              targetElement.scrollIntoView({ behavior: 'smooth' });
+            }
+          } else {
+            showTab(targetId);
+          }
         });
       });
 
