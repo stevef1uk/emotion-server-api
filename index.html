@@ -111,6 +111,19 @@
       background: #00cc00 !important; 
       color: #000 !important;
     }
+    /* Mode toggle */
+    .mode-toggle { display:flex; gap:10px; align-items:center; }
+    .toggle-btn { 
+      background:#f8f9fa; 
+      border:2px solid #e9ecef; 
+      padding:8px 12px; 
+      border-radius:8px; 
+      cursor:pointer; 
+      font-size:14px; 
+      transition:all 0.2s ease; 
+    }
+    .toggle-btn:hover { background:#e9ecef; border-color:#182848; }
+    .toggle-btn.active { background:#182848; color:#fff; border-color:#182848; }
   </style>
 
   <script>
@@ -131,13 +144,23 @@
       'surprise': '😲'
     };
 
-    // API endpoint
+    // API endpoints
     const API_ENDPOINT = 'https://stevef1uk--emotion-server-serve.modal.run/predict';
+    const API_ENDPOINT_DETAILED = 'https://stevef1uk--emotion-server-serve.modal.run/predict_detailed';
+    let apiMode = 'standard';
 
     // Warm up API on page load
     async function warmUpAPI() {
       try {
         await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: "warmup" })
+        });
+        // Also warm up detailed endpoint
+        await fetch(API_ENDPOINT_DETAILED, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -151,9 +174,10 @@
     }
 
     // Call emotion detection API
-    async function detectEmotion(text) {
+    async function detectEmotion(text, useDetailed) {
       try {
-        const response = await fetch(API_ENDPOINT, {
+        const endpoint = useDetailed ? API_ENDPOINT_DETAILED : API_ENDPOINT;
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -186,22 +210,58 @@
       document.getElementById('analyze-btn').disabled = false;
     }
 
+    function formatConfidencePercent(confidenceValue) {
+      if (confidenceValue === undefined || confidenceValue === null) return null;
+      const numeric = Number(confidenceValue);
+      if (Number.isNaN(numeric)) return null;
+      const percentage = numeric > 1 ? numeric : numeric * 100;
+      return `${percentage.toFixed(1)}%`;
+    }
+
+    function normalizeApiResult(raw, useDetailed) {
+      // Determine emotion key
+      const emotion = raw.predicted_emotion || raw.emotion || null;
+      // Determine confidence: prefer explicit confidence/score
+      let confidence = raw.confidence;
+      if (confidence === undefined && raw.score !== undefined) confidence = raw.score;
+      // If still missing and we have a distribution, derive from it
+      const distribution = raw.all_emotions || null;
+      if ((confidence === undefined || confidence === null) && distribution && emotion && distribution[emotion] !== undefined) {
+        confidence = distribution[emotion];
+      }
+      return { emotion, confidence, allEmotions: distribution };
+    }
+
     // Display result
-    function displayResult(emotion, confidence, text) {
+    function displayResult(emotion, confidence, text, allEmotions) {
       const emoji = emotionEmojiMap[emotion] || '❓';
       const resultContent = document.getElementById('result-content');
+      const confidenceText = formatConfidencePercent(confidence);
+      const detailedSection = allEmotions ? `
+        <div style="margin-top: 15px;">
+          <strong>Distribution:</strong>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:8px;">
+            ${Object.entries(allEmotions).map(([k,v]) => `
+              <div style=\"background:#fff;padding:8px;border:1px solid #eee;border-radius:6px;\">
+                <span style=\"margin-right:6px;\">${emotionEmojiMap[k] || '•'}</span>
+                <strong>${k}</strong>: ${formatConfidencePercent(v) || '—'}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
       resultContent.innerHTML = `
         <div style="font-size: 3em; text-align: center; margin-bottom: 15px;">${emoji}</div>
         <div style="text-align: center; margin-bottom: 10px;">
           <strong>Emotion:</strong> ${emotion.charAt(0).toUpperCase() + emotion.slice(1)}
         </div>
-        <div style="text-align: center; margin-bottom: 15px;">
-          <strong>Confidence:</strong> ${(confidence * 100).toFixed(1)}%
-        </div>
+        ${confidenceText ? `<div style="text-align: center; margin-bottom: 15px;"><strong>Confidence:</strong> ${confidenceText}</div>` : ''}
         <div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
           <strong>Analyzed text:</strong><br>
           "${text}"
         </div>
+        ${detailedSection}
       `;
       document.getElementById('result-container').style.display = 'block';
     }
@@ -210,6 +270,7 @@
     function handleAnalyze() {
       const textInput = document.getElementById('text-input');
       const text = textInput.value.trim();
+      const useDetailed = apiMode === 'detailed';
       
       if (!text) {
         alert('Please enter some text or select a sample paragraph.');
@@ -218,10 +279,11 @@
 
       showLoading();
       
-      detectEmotion(text)
+      detectEmotion(text, useDetailed)
         .then(data => {
           hideLoading();
-          displayResult(data.emotion, data.confidence, text);
+          const normalized = normalizeApiResult(data, useDetailed);
+          displayResult(normalized.emotion, normalized.confidence, text, normalized.allEmotions);
         })
         .catch(error => {
           hideLoading();
@@ -322,6 +384,25 @@
           handleAnalyze();
         }
       });
+
+      // Mode toggle handlers
+      const standardBtn = document.getElementById('mode-standard');
+      const detailedBtn = document.getElementById('mode-detailed');
+      function setMode(mode) {
+        apiMode = mode;
+        if (mode === 'standard') {
+          standardBtn.classList.add('active');
+          detailedBtn.classList.remove('active');
+        } else {
+          detailedBtn.classList.add('active');
+          standardBtn.classList.remove('active');
+        }
+      }
+      if (standardBtn && detailedBtn) {
+        standardBtn.addEventListener('click', () => setMode('standard'));
+        detailedBtn.addEventListener('click', () => setMode('detailed'));
+        setMode('standard'); // default
+      }
     });
 
     // Back-to-top button
@@ -358,6 +439,16 @@
       <div style="margin-bottom: 20px;">
         <label for="text-input" style="display: block; margin-bottom: 10px; font-weight: bold;">Enter your text:</label>
         <textarea id="text-input" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: Arial, sans-serif; resize: vertical;" placeholder="Type your text here..."></textarea>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-weight:bold;">Mode:</span>
+          <div class="mode-toggle" role="group" aria-label="API mode toggle">
+            <button id="mode-standard" class="toggle-btn active" type="button">Standard</button>
+            <button id="mode-detailed" class="toggle-btn" type="button">Detailed</button>
+          </div>
+        </div>
       </div>
       
       <div style="margin-bottom: 20px;">
@@ -448,6 +539,31 @@ Response:
   "text": "I’m so happy to see you!",
   "emotion": "happiness",
   "emoji": "😊"
+}</code></pre>
+      <p>Detailed endpoint (public URL):</p>
+      <pre><code>curl -s -X POST https://stevef1uk--emotion-server-serve.modal.run/predict_detailed \
+     -H "Content-Type: application/json" \
+     -d '{"text":"Im indifferent to the whole thing"}'
+
+Response:
+{
+  "predicted_emotion": "neutral",
+  "confidence": 0.75,
+  "all_emotions": {
+    "anger": 0.00,
+    "confusion": 0.15,
+    "desire": 0.00,
+    "disgust": 0.06,
+    "fear": 0.00,
+    "guilt": 0.00,
+    "happiness": 0.01,
+    "love": 0.00,
+    "neutral": 0.75,
+    "sadness": 0.02,
+    "sarcasm": 0.00,
+    "shame": 0.01,
+    "surprise": 0.00
+  }
 }</code></pre>
       <p>For a complete Docker Compose setup with a Gradio UI and MCP server as well as a tool to test the service against your input files, see the companion repo: <a href="https://github.com/stevef1uk/emotion-server-demo.git" target="_blank" rel="noopener">emotion-service-demo on GitHub</a>.</p>
       
