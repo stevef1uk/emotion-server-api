@@ -545,7 +545,11 @@ Response (fastest – confidence fixed at 1.0):
       <p>Optional: request accurate confidence (slower):</p>
       <pre><code>curl -s -X POST 'http://localhost:8000/predict?accurate=1' \
   -H 'Content-Type: application/json' \
-  -d '{"text":"I am so happy today!"}' | jq .
+  -d '{"text":"I am so!"}' | jq .
+  {
+    "emotion": "surprise",
+    "confidence": 0.5
+  }
 
 # Default (fast path): /predict → confidence fixed at 1.0 (fastest)
 # Accurate (slower): /predict?accurate=1 → confidence is the model's real probability</code></pre>
