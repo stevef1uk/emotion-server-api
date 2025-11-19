@@ -29,14 +29,14 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Emotion Server API",
-    "url": "https://yourwebsite.com",
+    "url": "https://emotion-service-api.sjfisher.com",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Linux, MacOS, Windows, Raspberry Pi",
     "offers": {
       "@type": "Offer",
       "price": "99.00",
       "priceCurrency": "EUR",
-      "url": "https://yourwebsite.com/pricing"
+      "url": "https://emotion-service-api.sjfisher.com/#pricing"
     },
     "description": "Secure, local emotion detection API using fine-tuned Gemma3 model."
   }
@@ -242,8 +242,8 @@
           <strong>Distribution:</strong>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:8px;">
             ${Object.entries(allEmotions).map(([k,v]) => `
-              <div style=\"background:#fff;padding:8px;border:1px solid #eee;border-radius:6px;\">
-                <span style=\"margin-right:6px;\">${emotionEmojiMap[k] || '•'}</span>
+              <div style="background:#fff;padding:8px;border:1px solid #eee;border-radius:6px;">
+                <span style="margin-right:6px;">${emotionEmojiMap[k] || '•'}</span>
                 <strong>${k}</strong>: ${formatConfidencePercent(v) || '—'}
               </div>
             `).join('')}
@@ -300,19 +300,19 @@
     // Tab switching functionality
     function showTab(tabId) {
       if (tabId === 'try-it') {
-        // Hide all main content and show only Try IN page
+        // Hide all main content and show only Try It page
         const mainCards = document.querySelectorAll('.card:not(#try-it)');
         mainCards.forEach(card => {
           card.style.display = 'none';
         });
         
-        // Show Try IN page
+        // Show Try It page
         const tryCard = document.getElementById('try-it');
         if (tryCard) {
           tryCard.style.display = 'block';
         }
       } else {
-        // Hide Try IN page and show all main content
+        // Hide Try It page and show all main content
         const tryCard = document.getElementById('try-it');
         if (tryCard) {
           tryCard.style.display = 'none';
@@ -532,11 +532,11 @@ docker run -d -p 8000:8000 stevef1uk/emotion-service:arm64</code></pre>
       <p>Send a POST request (fast path):</p>
       <pre><code>curl -s -X POST http://localhost:8000/predict \
      -H "Content-Type: application/json" \
-     -d '{"text": "I’m so happy to see you!"}'
+     -d '{"text": "I'm so happy to see you!"}'
 
 Response (fastest – confidence fixed at 1.0):
 {
-  "text": "I’m so happy to see you!",
+  "text": "I'm so happy to see you!",
   "emotion": "happiness",
   "confidence": 1,
   "emoji": "😊"
@@ -594,7 +594,7 @@ Response:
         <tr><td>Hugging Face</td><td>0.3938</td><td>226</td><td>0.48</td></tr>
         <tr><td>OpenAI</td><td>0.3894</td><td>226</td><td>154.51</td></tr>
       </table>
-      <p>These results highlight Emotion Server API’s balance of accuracy and efficiency compared to alternatives.</p>
+      <p>These results highlight Emotion Server API's balance of accuracy and efficiency compared to alternatives.</p>
     </div>
 
     <div class="card" id="business-case">
