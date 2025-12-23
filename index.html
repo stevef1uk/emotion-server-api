@@ -151,7 +151,7 @@
 
     // Warm up API on page load
     async function warmUpAPI() {
-      try {
+      /*try {
         await fetch(API_ENDPOINT + '?accurate=1', {
           method: 'POST',
           headers: {
@@ -170,14 +170,14 @@
         console.log('API warmed up successfully');
       } catch (error) {
         console.log('API warmup failed:', error);
-      }
+      } */
     }
 
     // Call emotion detection API
     async function detectEmotion(text, useDetailed) {
       try {
         const endpoint = useDetailed ? API_ENDPOINT_DETAILED : (API_ENDPOINT + '?accurate=1');
-        const response = await fetch(endpoint, {
+        /* const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -194,7 +194,8 @@
       } catch (error) {
         console.error('Error calling emotion API:', error);
         throw error;
-      }
+      } */
+        const response = "Sorry Demonstraton is no longer available"
     }
 
     // Show loading state
