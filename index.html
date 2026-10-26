@@ -145,57 +145,52 @@
     };
 
     // API endpoints
-    const API_ENDPOINT = 'https://stevef1uk--emotion-server-serve.modal.run/predict';
-    const API_ENDPOINT_DETAILED = 'https://stevef1uk--emotion-server-serve.modal.run/predict_detailed';
+    const API_ENDPOINT = '/api/analyze';
     let apiMode = 'standard';
 
     // Warm up API on page load
     async function warmUpAPI() {
-      /*try {
-        await fetch(API_ENDPOINT + '?accurate=1', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text: "warmup" })
-        });
-        // Also warm up detailed endpoint
-        await fetch(API_ENDPOINT_DETAILED, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text: "warmup" })
-        });
-        console.log('API warmed up successfully');
+      try {
+        await fetch('/healthz');
       } catch (error) {
-        console.log('API warmup failed:', error);
-      } */
+        console.debug('API warmup check:', error);
+      }
     }
 
     // Call emotion detection API
     async function detectEmotion(text, useDetailed) {
       try {
-        const endpoint = useDetailed ? API_ENDPOINT_DETAILED : (API_ENDPOINT + '?accurate=1');
-        /* const response = await fetch(endpoint, {
+        const response = await fetch(API_ENDPOINT, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ text: text })
+          body: JSON.stringify({
+            text: text,
+            detailed: Boolean(useDetailed)
+          })
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          let errMessage = `HTTP error! status: ${response.status}`;
+          try {
+            const errData = await response.json();
+            if (errData && errData.error) {
+              errMessage = errData.error;
+            }
+          } catch (_) {}
+          throw new Error(errMessage);
         }
 
         const data = await response.json();
+        if (data.status === 'error') {
+          throw new Error(data.error || 'Failed to detect emotion');
+        }
         return data;
       } catch (error) {
         console.error('Error calling emotion API:', error);
         throw error;
-      } */
-        const response = "Sorry Demonstraton is no longer available"
+      }
     }
 
     // Show loading state
@@ -221,7 +216,8 @@
 
     function normalizeApiResult(raw, useDetailed) {
       // Determine emotion key
-      const emotion = raw.predicted_emotion || raw.emotion || null;
+      const rawEmotion = raw.primary_emotion || raw.predicted_emotion || raw.emotion || null;
+      const emotion = rawEmotion ? String(rawEmotion).toLowerCase().trim() : null;
       // Determine confidence: prefer explicit confidence/score
       let confidence = raw.confidence;
       if (confidence === undefined && raw.score !== undefined) confidence = raw.score;
@@ -420,7 +416,7 @@
     <h1>Emotion Server API</h1>
     <p>Professional Emotion Detection for Business and Enterprise</p>
     <nav>
-      <!-- <a href="#try-it" id="try-tab">Try It Live!</a> -->
+      <a href="#try-it" id="try-tab">Try It Live!</a>
       <a href="#features">Features</a>
       <a href="#emotions">Emotions</a>
       <a href="#usage">Usage</a>
